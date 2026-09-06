@@ -25,6 +25,9 @@ public class Registry {
     /** R4: edad máxima biológicamente posible. */
     static final int MAX_AGE = 120;
 
+    /** R5: edad mínima para poder votar. */
+    static final int MIN_VOTING_AGE = 18;
+
     public RegisterResult registerVoter(Person p) {
         if (p == null) {
             return RegisterResult.INVALID; // R1: persona nula
@@ -38,8 +41,8 @@ public class Registry {
         if (p.getAge() < MIN_AGE || p.getAge() > MAX_AGE) {
             return RegisterResult.INVALID_AGE; // R4: edad biológicamente imposible
         }
-        if (p.getAge() < 18) {
-            return RegisterResult.UNDERAGE; // implementacion minima para R5
+        if (p.getAge() < MIN_VOTING_AGE) {
+            return RegisterResult.UNDERAGE; // R5: menor de edad
         }
         // Implementacion minima para pasar las pruebas de las iteraciones 2 a 5.
         // TODO iteracion 6: validar duplicados.
