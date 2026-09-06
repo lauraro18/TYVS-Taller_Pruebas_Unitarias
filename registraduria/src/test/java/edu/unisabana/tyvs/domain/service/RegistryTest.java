@@ -138,4 +138,32 @@ class RegistryTest {
         // Assert
         assertEquals(RegisterResult.VALID, result);
     }
+
+    // --- Iteracion 5: R5 - mayoria de edad -------------------------------
+
+    @Test
+    @DisplayName("Given una persona de 17 anios viva y con id valido, When se registra, Then el resultado es UNDERAGE")
+    void shouldRejectUnderageAt17() {
+        // Arrange
+        Person person = new Person("Sofía", 13, 17, Gender.FEMALE, true);
+
+        // Act
+        RegisterResult result = registry.registerVoter(person);
+
+        // Assert
+        assertEquals(RegisterResult.UNDERAGE, result);
+    }
+
+    @Test
+    @DisplayName("Given una persona de 18 anios viva y con id valido, When se registra, Then el resultado es VALID")
+    void shouldAcceptAdultAt18() {
+        // Arrange
+        Person person = new Person("Diego", 14, 18, Gender.MALE, true);
+
+        // Act
+        RegisterResult result = registry.registerVoter(person);
+
+        // Assert
+        assertEquals(RegisterResult.VALID, result);
+    }
 }
