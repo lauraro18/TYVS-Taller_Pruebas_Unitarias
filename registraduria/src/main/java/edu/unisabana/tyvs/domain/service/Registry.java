@@ -3,16 +3,22 @@ package edu.unisabana.tyvs.domain.service;
 import edu.unisabana.tyvs.domain.model.Person;
 import edu.unisabana.tyvs.domain.model.RegisterResult;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
- * PUNTO DE PARTIDA DEL TALLER - no es la solucion final.
+ * Servicio de dominio de la Registraduría: decide si una {@link Person} queda
+ * registrada como votante, aplicando las reglas de negocio R1-R7 (ver README).
  *
- * Esta clase es el estado del codigo al terminar la ITERACION 5 (regla
- * "mayoria de edad"). La regla que falta es la que usted debe construir
- * con TDD (Red -> Green -> Refactor):
+ * <p>Orden de evaluación (decisión de diseño, ver README): R1 -> R2 -> R3 ->
+ * R4 -> R5 -> R6 -> R7. La primera regla que falla determina el resultado.
+ * Por ejemplo, una persona muerta de 15 años devuelve {@code DEAD}, no
+ * {@code UNDERAGE}, porque R3 se evalúa antes que R5.</p>
  *
- *   - id ya registrado antes -> DUPLICATED
- *
- * Escriba PRIMERO la prueba que falla, luego la implementacion minima.
+ * <p>Esta clase mantiene estado (los ids ya registrados). Por eso cada prueba
+ * debe trabajar con una instancia nueva de {@code Registry} (ver
+ * {@code @BeforeEach} en {@code RegistryTest}); de lo contrario el orden de
+ * ejecución de las pruebas contaminaría los resultados.</p>
  */
 public class Registry {
 
@@ -27,6 +33,8 @@ public class Registry {
 
     /** R5: edad mínima para poder votar. */
     static final int MIN_VOTING_AGE = 18;
+
+    private final Set<Integer> registeredIds = new HashSet<>();
 
     public RegisterResult registerVoter(Person p) {
         if (p == null) {
@@ -44,8 +52,10 @@ public class Registry {
         if (p.getAge() < MIN_VOTING_AGE) {
             return RegisterResult.UNDERAGE; // R5: menor de edad
         }
-        // Implementacion minima para pasar las pruebas de las iteraciones 2 a 5.
-        // TODO iteracion 6: validar duplicados.
-        return RegisterResult.VALID;
+        if (registeredIds.contains(p.getId())) {
+            return RegisterResult.DUPLICATED; // R6: id ya registrado
+        }
+        registeredIds.add(p.getId());
+        return RegisterResult.VALID; // R7: cumple todas las reglas
     }
 }
