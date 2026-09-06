@@ -97,4 +97,45 @@ class RegistryTest {
         // Assert
         assertEquals(RegisterResult.INVALID, result);
     }
+
+    // --- Iteracion 4: R4 - edad biologicamente imposible ----------------
+
+    @Test
+    @DisplayName("Given una persona con edad -1, When se registra, Then el resultado es INVALID_AGE")
+    void shouldRejectInvalidAgeUnderZero() {
+        // Arrange
+        Person person = new Person("Juan", 10, -1, Gender.MALE, true);
+
+        // Act
+        RegisterResult result = registry.registerVoter(person);
+
+        // Assert
+        assertEquals(RegisterResult.INVALID_AGE, result);
+    }
+
+    @Test
+    @DisplayName("Given una persona con edad 121, When se registra, Then el resultado es INVALID_AGE")
+    void shouldRejectInvalidAgeOver120() {
+        // Arrange
+        Person person = new Person("Juan", 11, 121, Gender.MALE, true);
+
+        // Act
+        RegisterResult result = registry.registerVoter(person);
+
+        // Assert
+        assertEquals(RegisterResult.INVALID_AGE, result);
+    }
+
+    @Test
+    @DisplayName("Given una persona con edad limite superior 120, When se registra, Then el resultado es VALID")
+    void shouldAcceptMaxAge120() {
+        // Arrange
+        Person person = new Person("Rosa", 12, 120, Gender.FEMALE, true);
+
+        // Act
+        RegisterResult result = registry.registerVoter(person);
+
+        // Assert
+        assertEquals(RegisterResult.VALID, result);
+    }
 }
