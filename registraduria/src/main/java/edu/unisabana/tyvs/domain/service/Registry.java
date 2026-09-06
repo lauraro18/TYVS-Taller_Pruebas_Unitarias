@@ -6,11 +6,10 @@ import edu.unisabana.tyvs.domain.model.RegisterResult;
 /**
  * PUNTO DE PARTIDA DEL TALLER - no es la solucion final.
  *
- * Esta clase es el estado del codigo al terminar la ITERACION 3 (regla
- * "id no positivo"). Las reglas que faltan son las que usted debe construir
- * con TDD (Red -> Green -> Refactor):
+ * Esta clase es el estado del codigo al terminar la ITERACION 4 (regla
+ * "edad biologicamente imposible"). Las reglas que faltan son las que usted
+ * debe construir con TDD (Red -> Green -> Refactor):
  *
- *   - edad < 0 o edad > 120  -> INVALID_AGE
  *   - 0 <= edad < 18         -> UNDERAGE
  *   - id ya registrado antes -> DUPLICATED
  *
@@ -31,8 +30,11 @@ public class Registry {
         if (!p.isAlive()) {
             return RegisterResult.DEAD; // R3: persona no viva
         }
-        // Implementacion minima para pasar las pruebas de las iteraciones 2 y 3.
-        // TODO iteracion 4 en adelante: validar edad y duplicados.
+        if (p.getAge() < 0 || p.getAge() > 120) {
+            return RegisterResult.INVALID_AGE; // implementacion minima para R4
+        }
+        // Implementacion minima para pasar las pruebas de las iteraciones 2 a 4.
+        // TODO iteracion 5 en adelante: validar mayoria de edad y duplicados.
         return RegisterResult.VALID;
     }
 }
