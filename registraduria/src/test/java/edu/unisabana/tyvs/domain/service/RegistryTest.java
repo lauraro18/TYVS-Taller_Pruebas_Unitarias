@@ -166,4 +166,22 @@ class RegistryTest {
         // Assert
         assertEquals(RegisterResult.VALID, result);
     }
+
+    // --- Iteracion 6: R6 - duplicados ------------------------------------
+
+    @Test
+    @DisplayName("Given un id ya registrado, When se registra otra persona con el mismo id, Then el resultado es DUPLICATED")
+    void shouldRejectDuplicatedId() {
+        // Arrange
+        Person first = new Person("Carlos", 200, 30, Gender.MALE, true);
+        Person second = new Person("Carla", 200, 25, Gender.FEMALE, true);
+
+        // Act
+        RegisterResult firstResult = registry.registerVoter(first);
+        RegisterResult secondResult = registry.registerVoter(second);
+
+        // Assert
+        assertEquals(RegisterResult.VALID, firstResult);
+        assertEquals(RegisterResult.DUPLICATED, secondResult);
+    }
 }
