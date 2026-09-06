@@ -6,11 +6,10 @@ import edu.unisabana.tyvs.domain.model.RegisterResult;
 /**
  * PUNTO DE PARTIDA DEL TALLER - no es la solucion final.
  *
- * Esta clase es el estado del codigo al terminar la ITERACION 4 (regla
- * "edad biologicamente imposible"). Las reglas que faltan son las que usted
- * debe construir con TDD (Red -> Green -> Refactor):
+ * Esta clase es el estado del codigo al terminar la ITERACION 5 (regla
+ * "mayoria de edad"). La regla que falta es la que usted debe construir
+ * con TDD (Red -> Green -> Refactor):
  *
- *   - 0 <= edad < 18         -> UNDERAGE
  *   - id ya registrado antes -> DUPLICATED
  *
  * Escriba PRIMERO la prueba que falla, luego la implementacion minima.
@@ -39,8 +38,11 @@ public class Registry {
         if (p.getAge() < MIN_AGE || p.getAge() > MAX_AGE) {
             return RegisterResult.INVALID_AGE; // R4: edad biológicamente imposible
         }
-        // Implementacion minima para pasar las pruebas de las iteraciones 2 a 4.
-        // TODO iteracion 5 en adelante: validar mayoria de edad y duplicados.
+        if (p.getAge() < 18) {
+            return RegisterResult.UNDERAGE; // implementacion minima para R5
+        }
+        // Implementacion minima para pasar las pruebas de las iteraciones 2 a 5.
+        // TODO iteracion 6: validar duplicados.
         return RegisterResult.VALID;
     }
 }
