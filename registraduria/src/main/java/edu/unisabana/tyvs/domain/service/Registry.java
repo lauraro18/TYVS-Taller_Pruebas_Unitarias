@@ -20,6 +20,12 @@ public class Registry {
     /** R2: el id del documento debe ser mayor o igual a este valor. */
     static final int MIN_ID = 1;
 
+    /** R4: edad mínima biológicamente posible. */
+    static final int MIN_AGE = 0;
+
+    /** R4: edad máxima biológicamente posible. */
+    static final int MAX_AGE = 120;
+
     public RegisterResult registerVoter(Person p) {
         if (p == null) {
             return RegisterResult.INVALID; // R1: persona nula
@@ -30,8 +36,8 @@ public class Registry {
         if (!p.isAlive()) {
             return RegisterResult.DEAD; // R3: persona no viva
         }
-        if (p.getAge() < 0 || p.getAge() > 120) {
-            return RegisterResult.INVALID_AGE; // implementacion minima para R4
+        if (p.getAge() < MIN_AGE || p.getAge() > MAX_AGE) {
+            return RegisterResult.INVALID_AGE; // R4: edad biológicamente imposible
         }
         // Implementacion minima para pasar las pruebas de las iteraciones 2 a 4.
         // TODO iteracion 5 en adelante: validar mayoria de edad y duplicados.
