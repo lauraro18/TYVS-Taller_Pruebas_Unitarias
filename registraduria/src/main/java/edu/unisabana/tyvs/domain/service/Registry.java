@@ -18,15 +18,18 @@ import edu.unisabana.tyvs.domain.model.RegisterResult;
  */
 public class Registry {
 
+    /** R2: el id del documento debe ser mayor o igual a este valor. */
+    static final int MIN_ID = 1;
+
     public RegisterResult registerVoter(Person p) {
         if (p == null) {
-            return RegisterResult.INVALID; // regla defensiva
+            return RegisterResult.INVALID; // R1: persona nula
         }
-        if (p.getId() < 1) {
-            return RegisterResult.INVALID; // implementacion minima para R2
+        if (p.getId() < MIN_ID) {
+            return RegisterResult.INVALID; // R2: id no positivo
         }
         if (!p.isAlive()) {
-            return RegisterResult.DEAD;
+            return RegisterResult.DEAD; // R3: persona no viva
         }
         // Implementacion minima para pasar las pruebas de las iteraciones 2 y 3.
         // TODO iteracion 4 en adelante: validar edad y duplicados.
