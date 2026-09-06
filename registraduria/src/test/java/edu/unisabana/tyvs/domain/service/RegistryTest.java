@@ -35,7 +35,7 @@ class RegistryTest {
     }
 
     @Test
-    @DisplayName("Una persona viva y mayor de edad queda registrada")
+    @DisplayName("Given una persona viva y mayor de edad, When se registra, Then el resultado es VALID")
     void shouldRegisterValidPerson() {
         // Arrange: preparar los datos
         Person person = new Person("Ana", 1, 30, Gender.FEMALE, true);
@@ -48,7 +48,7 @@ class RegistryTest {
     }
 
     @Test
-    @DisplayName("Una persona no viva se rechaza con DEAD")
+    @DisplayName("Given una persona no viva, When se registra, Then el resultado es DEAD")
     void shouldRejectDeadPerson() {
         // Arrange: preparar los datos
         Person dead = new Person("Carlos", 2, 40, Gender.MALE, false);
@@ -61,7 +61,7 @@ class RegistryTest {
     }
 
     @Test
-    @DisplayName("Una persona nula se rechaza con INVALID")
+    @DisplayName("Given que la persona es null, When se registra, Then el resultado es INVALID")
     void shouldReturnInvalidWhenPersonIsNull() {
         // Act
         RegisterResult result = registry.registerVoter(null);
