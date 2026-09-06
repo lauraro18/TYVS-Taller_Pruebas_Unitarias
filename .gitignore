@@ -1,18 +1,23 @@
+# Maven
+registraduria/target/
+target/
 *.class
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+# jqwik (base de datos de casos generados, no debe versionarse)
+registraduria/.jqwik-database/
+.jqwik-database/
 
-# Package Files #
-*.jar
-*.war
-*.ear
+# IDEs
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
+# Sistema operativo
+.DS_Store
+Thumbs.db
 
-registraduria/target/
-
-target/
-
-*.ini
+# Logs
+*.log

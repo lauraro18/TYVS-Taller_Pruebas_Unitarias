@@ -69,4 +69,32 @@ class RegistryTest {
         // Assert
         assertEquals(RegisterResult.INVALID, result);
     }
+
+    // --- Iteracion 3: R2 - id no positivo -------------------------------
+
+    @Test
+    @DisplayName("Given una persona con id = 0, When se registra, Then el resultado es INVALID")
+    void shouldRejectWhenIdIsZero() {
+        // Arrange
+        Person person = new Person("Luis", 0, 25, Gender.MALE, true);
+
+        // Act
+        RegisterResult result = registry.registerVoter(person);
+
+        // Assert
+        assertEquals(RegisterResult.INVALID, result);
+    }
+
+    @Test
+    @DisplayName("Given una persona con id negativo, When se registra, Then el resultado es INVALID")
+    void shouldRejectWhenIdIsNegative() {
+        // Arrange
+        Person person = new Person("Luis", -5, 25, Gender.MALE, true);
+
+        // Act
+        RegisterResult result = registry.registerVoter(person);
+
+        // Assert
+        assertEquals(RegisterResult.INVALID, result);
+    }
 }
