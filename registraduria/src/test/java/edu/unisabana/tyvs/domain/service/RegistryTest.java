@@ -12,10 +12,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Pruebas por EJEMPLO del dominio: cada prueba fija una entrada concreta y su
- * resultado esperado. Estado al terminar la ITERACION 2 del README.
+ * resultado esperado, siguiendo el patrón AAA (Arrange-Act-Assert).
  *
- * Complemento: RegistryPropertiesTest expresa las mismas reglas como
- * PROPIEDADES sobre rangos completos de entradas, en vez de ejemplos sueltos.
+ * <p>La tabla de clases de equivalencia y valores límite, junto con los
+ * escenarios BDD (Given-When-Then) equivalentes a cada prueba, está
+ * documentada en la Wiki del repositorio (página "Clases de Equivalencia y
+ * BDD").</p>
+ *
+ * <p>Complemento: {@link RegistryPropertiesTest} expresa las mismas reglas
+ * como PROPIEDADES sobre rangos completos de entradas, en vez de ejemplos
+ * sueltos.</p>
  */
 class RegistryTest {
 
@@ -24,41 +30,36 @@ class RegistryTest {
     /**
      * Un Registry NUEVO antes de cada prueba.
      *
-     * Importante: cuando implemente DUPLICATED, el Registry guardara estado
-     * (los ids ya registrados). Si compartiera la misma instancia entre
-     * pruebas, una prueba podria "ensuciar" a la siguiente y los resultados
-     * dependerian del orden de ejecucion. Cada prueba debe ser independiente.
+     * Importante: Registry guarda estado (los ids ya registrados, ver R6).
+     * Si dos pruebas compartieran la misma instancia, la primera podria
+     * "ensuciar" a la siguiente y los resultados dependerian del orden de
+     * ejecucion. Cada prueba debe ser independiente.
      */
     @BeforeEach
     void setUp() {
         registry = new Registry();
     }
 
+    // ---------------------------------------------------------------
+    // R7 - camino feliz
+    // ---------------------------------------------------------------
+
     @Test
-    @DisplayName("Given una persona viva y mayor de edad, When se registra, Then el resultado es VALID")
+    @DisplayName("Given una persona viva, mayor de edad y con id único, When se registra, Then el resultado es VALID")
     void shouldRegisterValidPerson() {
-        // Arrange: preparar los datos
+        // Arrange
         Person person = new Person("Ana", 1, 30, Gender.FEMALE, true);
 
-        // Act: ejecutar la accion que queremos probar
+        // Act
         RegisterResult result = registry.registerVoter(person);
 
-        // Assert: verificar el resultado esperado
+        // Assert
         assertEquals(RegisterResult.VALID, result);
     }
 
-    @Test
-    @DisplayName("Given una persona no viva, When se registra, Then el resultado es DEAD")
-    void shouldRejectDeadPerson() {
-        // Arrange: preparar los datos
-        Person dead = new Person("Carlos", 2, 40, Gender.MALE, false);
-
-        // Act: ejecutar la accion que queremos probar
-        RegisterResult result = registry.registerVoter(dead);
-
-        // Assert: verificar el resultado esperado
-        assertEquals(RegisterResult.DEAD, result);
-    }
+    // ---------------------------------------------------------------
+    // R1 - persona nula
+    // ---------------------------------------------------------------
 
     @Test
     @DisplayName("Given que la persona es null, When se registra, Then el resultado es INVALID")
@@ -70,7 +71,9 @@ class RegistryTest {
         assertEquals(RegisterResult.INVALID, result);
     }
 
-    // --- Iteracion 3: R2 - id no positivo -------------------------------
+    // ---------------------------------------------------------------
+    // R2 - id no positivo (clase inválida: id <= 0; bordes 0 y -5)
+    // ---------------------------------------------------------------
 
     @Test
     @DisplayName("Given una persona con id = 0, When se registra, Then el resultado es INVALID")
@@ -98,7 +101,52 @@ class RegistryTest {
         assertEquals(RegisterResult.INVALID, result);
     }
 
-    // --- Iteracion 4: R4 - edad biologicamente imposible ----------------
+    // ---------------------------------------------------------------
+    // R3 - persona no viva
+    // ---------------------------------------------------------------
+
+    @Test
+    @DisplayName("Given una persona no viva, When se registra, Then el resultado es DEAD")
+    void shouldRejectDeadPerson() {
+        // Arrange
+        Person dead = new Person("Carlos", 2, 40, Gender.MALE, false);
+
+        // Act
+        RegisterResult result = registry.registerVoter(dead);
+
+        // Assert
+        assertEquals(RegisterResult.DEAD, result);
+    }
+
+    @Test
+    @DisplayName("Given una persona muerta Y menor de edad, When se registra, Then el resultado es DEAD (R3 se evalúa antes que R5)")
+    void deadRuleTakesPriorityOverUnderageRule() {
+        // Arrange: 15 años, no viva -> según el orden de evaluación R1..R7, DEAD gana sobre UNDERAGE
+        Person deadMinor = new Person("Pedro", 3, 15, Gender.MALE, false);
+
+        // Act
+        RegisterResult result = registry.registerVoter(deadMinor);
+
+        // Assert
+        assertEquals(RegisterResult.DEAD, result);
+    }
+
+    @Test
+    @DisplayName("Given un id inválido Y una persona muerta, When se registra, Then el resultado es INVALID (R2 se evalúa antes que R3)")
+    void invalidIdRuleTakesPriorityOverDeadRule() {
+        // Arrange: id <= 0 y además no viva -> gana INVALID porque R2 se evalúa antes que R3
+        Person invalidAndDead = new Person("Marta", -1, 40, Gender.FEMALE, false);
+
+        // Act
+        RegisterResult result = registry.registerVoter(invalidAndDead);
+
+        // Assert
+        assertEquals(RegisterResult.INVALID, result);
+    }
+
+    // ---------------------------------------------------------------
+    // R4 - edad biológicamente imposible (clase inválida: edad < 0 o > 120)
+    // ---------------------------------------------------------------
 
     @Test
     @DisplayName("Given una persona con edad -1, When se registra, Then el resultado es INVALID_AGE")
@@ -127,7 +175,7 @@ class RegistryTest {
     }
 
     @Test
-    @DisplayName("Given una persona con edad limite superior 120, When se registra, Then el resultado es VALID")
+    @DisplayName("Given una persona con edad límite superior 120, When se registra, Then el resultado es VALID")
     void shouldAcceptMaxAge120() {
         // Arrange
         Person person = new Person("Rosa", 12, 120, Gender.FEMALE, true);
@@ -139,10 +187,12 @@ class RegistryTest {
         assertEquals(RegisterResult.VALID, result);
     }
 
-    // --- Iteracion 5: R5 - mayoria de edad -------------------------------
+    // ---------------------------------------------------------------
+    // R5 - mayoría de edad (clase "menor": 0 <= edad < 18; bordes 17 y 18)
+    // ---------------------------------------------------------------
 
     @Test
-    @DisplayName("Given una persona de 17 anios viva y con id valido, When se registra, Then el resultado es UNDERAGE")
+    @DisplayName("Given una persona de 17 años viva y con id válido, When se registra, Then el resultado es UNDERAGE")
     void shouldRejectUnderageAt17() {
         // Arrange
         Person person = new Person("Sofía", 13, 17, Gender.FEMALE, true);
@@ -155,7 +205,7 @@ class RegistryTest {
     }
 
     @Test
-    @DisplayName("Given una persona de 18 anios viva y con id valido, When se registra, Then el resultado es VALID")
+    @DisplayName("Given una persona de 18 años viva y con id válido, When se registra, Then el resultado es VALID")
     void shouldAcceptAdultAt18() {
         // Arrange
         Person person = new Person("Diego", 14, 18, Gender.MALE, true);
@@ -167,10 +217,12 @@ class RegistryTest {
         assertEquals(RegisterResult.VALID, result);
     }
 
-    // --- Iteracion 6: R6 - duplicados ------------------------------------
+    // ---------------------------------------------------------------
+    // R6 - duplicados (clase "duplicado": mismo id ya registrado)
+    // ---------------------------------------------------------------
 
     @Test
-    @DisplayName("Given un id ya registrado, When se registra otra persona con el mismo id, Then el resultado es DUPLICATED")
+    @DisplayName("Given un id ya registrado previamente, When se registra otra persona con el mismo id, Then el resultado es DUPLICATED")
     void shouldRejectDuplicatedId() {
         // Arrange
         Person first = new Person("Carlos", 200, 30, Gender.MALE, true);
@@ -183,5 +235,18 @@ class RegistryTest {
         // Assert
         assertEquals(RegisterResult.VALID, firstResult);
         assertEquals(RegisterResult.DUPLICATED, secondResult);
+    }
+
+    @Test
+    @DisplayName("Given un id nunca registrado, When se registra, Then el resultado es VALID (no se confunde con DUPLICATED)")
+    void shouldAcceptUniqueId() {
+        // Arrange
+        Person person = new Person("Elena", 300, 40, Gender.FEMALE, true);
+
+        // Act
+        RegisterResult result = registry.registerVoter(person);
+
+        // Assert
+        assertEquals(RegisterResult.VALID, result);
     }
 }
