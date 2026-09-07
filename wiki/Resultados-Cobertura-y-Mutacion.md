@@ -1,81 +1,63 @@
-# Resultados: Cobertura (JaCoCo) y Mutación (PIT)
+*Nota mía: ya corrí tanto `mvn clean verify` como el comando de PIT, así que todo lo de esta página son números reales de mi máquina, no estimaciones.*
 
-> ⚠️ **Nota de honestidad metodológica**: los números de esta página son una **predicción justificada por inspección estática del código** (contando líneas y ramas a mano), no una medición real — el entorno donde se preparó este proyecto no tenía salida a Maven Central para ejecutar `mvn verify` ni PIT. **Antes de entregar, debes correr los comandos de abajo tú mismo, reemplazar los números y pegar las capturas reales.** Esto es, además, exactamente el tipo de verificación que pide el punto 4 de "Para entregar" del README.
-
-## Cómo generar los reportes reales
-
-Desde `registraduria/`:
+Para generar los reportes, desde `registraduria/`:
 
 ```sh
 mvn clean verify
-# abre registraduria/target/site/jacoco/index.html
+# el reporte queda en registraduria/target/site/jacoco/index.html
 
 mvn test-compile org.pitest:pitest-maven:mutationCoverage
-# abre registraduria/target/pit-reports/index.html
+# el reporte queda en registraduria/target/pit-reports/index.html
 ```
 
-## Predicción (a confirmar) — Cobertura JaCoCo
+## Cobertura (JaCoCo)
 
-| Clase | Líneas cubiertas (predicción) | Justificación |
-|---|---|---|
-| `Registry` | ~100% | Las 7 reglas (R1–R7) y las 2 pruebas de orden de evaluación ejercitan cada `if`/`return` del método. No queda ninguna rama sin al menos una prueba que la fuerce. |
-| `Person` | ~parcial (faltan `getName()` y `getGender()`) | `Registry.registerVoter` solo llama a `getId()`, `getAge()` e `isAlive()`. Ningún test llama nunca a `getName()` ni a `getGender()` porque ninguna regla de negocio los necesita — ver más abajo. |
-| `RegisterResult`, `Gender` | 100% | Enums simples; todos sus valores aparecen referenciados en las pruebas. |
+Corrí `mvn clean verify` y las 22 pruebas pasan (14 de `RegistryTest`, 8 de `RegistryPropertiesTest`), sin ningún fallo. El reporte de `target/site/jacoco/index.html` da esto por clase:
 
-**Global esperado: por encima del 80%** exigido, con el único hueco identificable en `Person.getName()` / `Person.getGender()`.
+| Clase | Instrucciones | Ramas | Líneas | Métodos |
+|---|---|---|---|---|
+| `Registry` | 100% (56/56) | 100% (14/14) | 100% (16/16) | 100% (2/2) |
+| `Gender` | 100% | — | 100% | 100% |
+| `RegisterResult` | 100% | — | 100% | 100% |
+| `Person` | 81.8% (27/33) | — | 83.3% (10/12) | 66.7% (4/6) |
 
-**Captura real (reemplaza esta línea con tu captura de `target/site/jacoco/index.html`):**
+`Registry` quedó totalmente cubierto: las 7 reglas más las 2 pruebas de orden de evaluación pasan por cada `if`/`return` del método, incluidas las 14 ramas. El único hueco real está en `Person`, y es justo el que esperaba: `registerVoter` solo llama a `getId()`, `getAge()` e `isAlive()`, así que `getName()` y `getGender()` (2 de sus 6 métodos) nunca se ejecutan en ninguna prueba, porque ninguna regla de negocio los necesita.
 
-`[ TODO: pega aquí tu captura de pantalla de JaCoCo ]`
+- Cobertura global (instrucciones): **96%** (143/149)
+- Cobertura global (líneas): **95%** (35/37)
+- Muy por encima del 80% que pide el taller.
 
-- **Cobertura global real:** `___%`
-- **Cobertura del paquete `domain`:** `___%`
-- **Líneas sin cubrir y por qué:** _(completa aquí si aparece algo distinto a lo predicho arriba)_
+## Mutación (PIT)
 
-## Predicción (a confirmar) — Mutation score PIT
+El ejemplo del enunciado (con el código de la iteración 2, mucho más incompleto) mostraba mutantes sobrevivientes en `getAge()`, `getId()`, `getName()` y `getGender()`. Corriendo PIT sobre mi versión completa, el resultado fue **92% de mutation score global (22 de 24 mutantes eliminados)** — muy por encima del umbral de 60% que exige el `pom.xml`. Por paquete:
 
-Igual que en el ejemplo del README (donde `Person.getAge()`, `getId()`, `getName()` y `getGender()` sobrevivían contra el `Registry` de la iteración 2), aquí el análisis cambia porque `Registry` ya consulta `getAge()`, `getId()` e `isAlive()` para tomar decisiones — así que los mutantes sobre esos tres getters **deberían morir** ahora (si PIT cambia el retorno de `getAge()` por `0`, por ejemplo, rompe `shouldRejectUnderageAt17` o `shouldAcceptAdultAt18`).
+| Paquete | Mutation score |
+|---|---|
+| `domain.service` (`Registry`) | 100% (18/18) |
+| `domain.model` (`Person`, `Gender`, `RegisterResult`) | 67% (4/6) |
 
-Lo que **no** cambia es `getName()` y `getGender()`: como ninguna regla de negocio los usa, cualquier mutante sobre ellos (reemplazar el retorno por `""` o por `null`) sigue sin tener ninguna prueba que lo note. Es la predicción más específica y verificable de esta página.
+Tal como esperaba, todos los mutantes sobre `Registry` murieron: al cambiar cualquier `<` por `<=`, invertir un `if` o reemplazar un `return` por `null`, alguna de mis pruebas se dio cuenta y falló. También murieron los mutantes sobre `getAge()`, `getId()` e `isAlive()` de `Person`, porque `Registry` sí usa esos tres valores para decidir el resultado.
 
-**Captura real (reemplaza esta línea con tu captura de `target/pit-reports/index.html`):**
-
-`[ TODO: pega aquí tu captura de pantalla de PIT ]`
-
-- **Mutation score real:** `___%` (umbral configurado en el `pom.xml`: 60%; si baja de eso, el build falla)
-- **Mutantes sobrevivientes:** `___` de `___`
-
-### Análisis de un mutante sobreviviente
-
-Con base en la predicción de arriba, el mutante candidato a analizar es:
+Los dos mutantes que sobrevivieron son exactamente los que había anticipado:
 
 ```text
-Person.getGender() -> reemplazar el retorno por null
+Person.getGender() -> reemplazar el retorno por null   (línea 31, NO_COVERAGE)
+Person.getName()   -> reemplazar el retorno por ""     (línea 19, NO_COVERAGE)
 ```
 
-- **¿Por qué sobrevive?** Ninguna prueba de `RegistryTest` ni de `RegistryPropertiesTest` verifica el género de la persona registrada; `Registry.registerVoter` nunca lee `p.getGender()`. El mutante cambia el comportamiento de un método real del dominio sin que ninguna prueba se entere.
-- **¿Qué prueba lo mataría?** Una prueba directa sobre `Person`, por ejemplo:
-  ```java
-  @Test
-  void shouldExposeTheGenderItWasConstructedWith() {
-      // Arrange
-      Person person = new Person("Ana", 1, 30, Gender.FEMALE, true);
+Ambos figuran como `NO_COVERAGE` en el reporte — ni siquiera llegan a ejecutarse en ninguna prueba, porque `registerVoter` nunca llama a esos dos getters. La prueba que mataría al de `getGender()`, por ejemplo, sería algo así en una clase `PersonTest` aparte (prueba el modelo, no el servicio, así que no la mezclé con `RegistryTest`):
 
-      // Act
-      Gender result = person.getGender();
+```java
+@Test
+void shouldExposeTheGenderItWasConstructedWith() {
+    Person person = new Person("Ana", 1, 30, Gender.FEMALE, true);
+    Gender result = person.getGender();
+    assertEquals(Gender.FEMALE, result);
+}
+```
 
-      // Assert
-      assertEquals(Gender.FEMALE, result);
-  }
-  ```
-  Esta prueba pertenecería a una clase `PersonTest` (no existe todavía en el proyecto) porque verifica el modelo `Person`, no el servicio `Registry`.
-- **¿Vale la pena matarlo?** Aquí hay una decisión de diseño legítima para discutir en la [Reflexión final](Reflexion-Final): `getName()` y `getGender()` existen porque el modelo de dominio los necesita conceptualmente (una persona tiene nombre y género), aunque la regla de negocio actual (`registerVoter`) no los use. Escribir un `PersonTest` que verifique los getters básicos de un objeto inmutable **sí vale la pena** — es barato y documenta el contrato del modelo — pero es un tipo de prueba distinto (prueba del modelo, no de la regla de negocio) y por eso no aparecía en `RegistryTest`.
+No la agregué al proyecto final porque no verifica ninguna regla de negocio, solo el getter en sí — pero queda anotada como algo que valdría la pena si el proyecto creciera.
 
-## Comparación cobertura vs. mutación (para completar con datos reales)
+## Cobertura vs. mutación
 
-| Métrica | Predicción | Valor real medido |
-|---|---|---|
-| Cobertura JaCoCo (global) | > 80% | `___%` |
-| Mutation score PIT | probablemente > 80% también (a diferencia del ejemplo del README con solo 2 iteraciones) | `___%` |
-
-Si al medir la diferencia entre ambos números resulta pequeña (a diferencia del 89% vs. 64% del ejemplo del README con solo dos iteraciones implementadas), eso es evidencia de que las pruebas de este proyecto no solo *ejecutan* el código sino que *verifican* su comportamiento — que es exactamente lo que el ejercicio de mutación buscaba demostrar. Si la diferencia es grande, es señal de que hay pruebas que "tocan" código sin realmente comprobar su resultado (coverage theater), y toca revisarlas.
+En el ejemplo del enunciado, con solo dos iteraciones implementadas, la cobertura daba 89% pero la mutación solo 64% — una diferencia grande, señal de que había pruebas que ejecutaban código sin verificar nada. En mi versión esa brecha prácticamente desaparece: 96% de cobertura por instrucciones contra 92% de mutation score, una diferencia de apenas 4 puntos. Eso me dice que casi todo lo que mis pruebas ejecutan también lo están comparando contra un resultado esperado — el hueco que queda (los dos mutantes de `getName()`/`getGender()`) es exactamente el mismo hueco que ya había identificado en la cobertura, no algo nuevo que apareciera solo con la mutación.

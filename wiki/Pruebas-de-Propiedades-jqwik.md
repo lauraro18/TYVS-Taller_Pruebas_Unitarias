@@ -1,61 +1,49 @@
-# Pruebas basadas en propiedades (jqwik)
+`RegistryPropertiesTest` trae 8 propiedades: las 3 que ya venían de ejemplo en el repo del profesor, más 5 que agregué yo (el mínimo pedido era 3).
 
-`RegistryPropertiesTest` contiene **8 propiedades** (3 de referencia del profesor + 5 propias), muy por encima del mínimo de 3 exigido por el taller.
-
-## Propiedades implementadas
-
-| Propiedad | Tipo | Regla / garantía que verifica |
-|---|---|---|
-| `unaPersonaNoVivaSiempreEsRechazada` | De negocio (referencia) | R3: no viva ⇒ siempre `DEAD` |
-| `elResultadoNoDependeDeLaInstancia` | Estructural — determinismo (referencia) | Misma entrada ⇒ mismo resultado, en instancias distintas |
-| `nuncaDevuelveNullNiLanzaExcepcion` | Estructural — totalidad (referencia) | Nunca `null`, nunca excepción, ni en los extremos de `int` |
-| `idNoPositivoSiempreEsInvalido` | De negocio (R2) | `id ≤ 0` ⇒ siempre `INVALID`, para cualquier edad adulta y género |
-| `todoMenorDeEdadEsRechazado` | De negocio (R5) | Toda edad en `[0, 17]` ⇒ siempre `UNDERAGE` |
-| `todoAdultoValidoSeRegistra` | De negocio (R5/R7) | Toda edad en `[18, 120]`, con id único ⇒ siempre `VALID` |
-| `elMismoIdRegistradoDosVecesSiempreEsDuplicadoLaSegundaVez` | De negocio (R6) | El mismo id, dos veces en el mismo `Registry` ⇒ 1ª `VALID`, 2ª siempre `DUPLICATED`, sin importar nombre/edad/género |
-| `elResultadoSiempreCaeEnUnaParticionConocida` | Estructural — invariante de partición | El resultado siempre pertenece al conjunto conocido de valores de `RegisterResult` |
-
-Se cumple el requisito del taller: al menos una propiedad de regla de negocio (todas las de arriba menos las tres estructurales) y al menos una estructural (tenemos tres: determinismo, totalidad y partición).
-
-## De ejemplo a propiedad: `todoAdultoValidoSeRegistra`
-
-| Prueba por ejemplo | Propiedad |
+| Propiedad | Qué verifica |
 |---|---|
-| `shouldAcceptAdultAt18`: "Diego, 18 años, vivo, id único → `VALID`" | `todoAdultoValidoSeRegistra`: "para **toda** edad entre 18 y 120, con id único → `VALID`" |
-| Verifica un punto del espacio de entradas | Verifica el rango completo por muestreo (jqwik genera cientos de valores de edad) |
+| `unaPersonaNoVivaSiempreEsRechazada` | R3: si no está viva, siempre da DEAD (venía de ejemplo) |
+| `elResultadoNoDependeDeLaInstancia` | Determinismo: la misma entrada siempre da el mismo resultado, en instancias distintas (venía de ejemplo) |
+| `nuncaDevuelveNullNiLanzaExcepcion` | Totalidad: nunca devuelve null ni lanza excepción, ni en los extremos de int (venía de ejemplo) |
+| `idNoPositivoSiempreEsInvalido` | R2: id ≤ 0 siempre da INVALID |
+| `todoMenorDeEdadEsRechazado` | R5: toda edad entre 0 y 17 da UNDERAGE |
+| `todoAdultoValidoSeRegistra` | R5/R7: toda edad entre 18 y 120, con id único, da VALID |
+| `elMismoIdRegistradoDosVecesSiempreEsDuplicadoLaSegundaVez` | R6: el mismo id registrado dos veces siempre da VALID y luego DUPLICATED |
+| `elResultadoSiempreCaeEnUnaParticionConocida` | El resultado siempre es uno de los valores conocidos del enum |
 
-La propiedad no solo repite el ejemplo con otro número: si alguien cambiara `MIN_VOTING_AGE` a `19` por error, la prueba por ejemplo con edad 18 fallaría, pero **también** fallaría de inmediato la propiedad, mostrando exactamente qué edad rompe la regla — sin que nadie tuviera que haber pensado en probar esa edad específica.
+Con esto cumplo lo que pedía el taller: al menos una propiedad de regla de negocio (la mayoría de la lista) y al menos una estructural (aquí hay tres: determinismo, totalidad y partición).
 
-## Ejercicio de shrinking (para completar en tu entrega)
+La diferencia frente a una prueba por ejemplo se ve bien con `todoAdultoValidoSeRegistra`. La prueba `shouldAcceptAdultAt18` dice "Diego, 18 años, vivo, id único → VALID", que es un solo punto del espacio de entradas. La propiedad dice lo mismo pero para toda edad entre 18 y 120, y jqwik genera cientos de combinaciones tratando de romperla. Si alguien cambiara por error `MIN_VOTING_AGE` a 19, la prueba por ejemplo fallaría, pero la propiedad también, y encima te dice exactamente qué edad la rompió sin que nadie tuviera que pensar en probar ese caso a mano.
 
-Esta parte **debes ejecutarla tú en tu propia máquina** (con `mvn`), porque requiere ver la salida real de jqwik al fallar una propiedad; no es algo que se pueda simular sin ejecutar el build. Pasos:
+## Lo del shrinking (ya lo corrí)
 
-1. Rompe deliberadamente una regla. Por ejemplo, en `Registry.java` comenta temporalmente la guarda de `UNDERAGE`:
-   ```java
-   // if (p.getAge() < MIN_VOTING_AGE) {
-   //     return RegisterResult.UNDERAGE;
-   // }
-   ```
-2. Ejecuta:
-   ```sh
-   mvn test -Dtest=RegistryPropertiesTest#todoMenorDeEdadEsRechazado
-   ```
-3. jqwik va a fallar y va a reportar, entre los detalles del fallo, una línea `Shrunk Sample` (o `Original Sample` seguida de `Shrunk Sample`) con el **contraejemplo mínimo** que rompe la propiedad — normalmente algo tan simple como `edad = 0` o el valor más bajo del rango que ya no está protegido.
-4. Copia aquí esa salida (el bloque `Original Sample` / `Shrunk Sample` completo) y compárala con la entrada aleatoria original que jqwik probó primero.
-5. Deshaz el cambio del paso 1 y vuelve a correr `mvn test` para confirmar que todo queda en verde otra vez.
+Para ver el shrinking en acción rompí una regla a propósito: comenté temporalmente la validación de `MIN_ID` en `Registry.java` (la de R2) y corrí
 
-**Plantilla para completar con tu resultado real:**
-
-```text
-Propiedad rota intencionalmente: todoMenorDeEdadEsRechazado
-Original Sample (edad aleatoria que jqwik probó primero): edad = <pega aquí el valor real>
-Shrunk Sample (contraejemplo mínimo reportado por jqwik):  edad = <pega aquí el valor real>
+```sh
+mvn clean test -Dtest=RegistryPropertiesTest#idNoPositivoSiempreEsInvalido
 ```
 
-### Por qué el contraejemplo reducido es más útil
+Esta propiedad dice que cualquier id ≤ 0 siempre debería dar `INVALID`. Al quitar esa validación, cualquier id (por más negativo que sea) pasa de largo, así que la propiedad tenía que fallar sí o sí. Esto fue lo que reportó jqwik:
 
-Si jqwik reportara la entrada aleatoria original (por ejemplo, "edad 73, id 88041, nombre 'xkqz'"), tendrías que revisar manualmente si el fallo depende del nombre, del id o de la edad. El *shrinking* elimina, uno por uno, cada dato que no es necesario para que la propiedad siga fallando, hasta quedarse con el caso más simple posible. En una propiedad de una sola variable como `todoMenorDeEdadEsRechazado`, lo más probable es que el mínimo sea el extremo del rango probado (`edad = 0`), porque jqwik intenta "reducir hacia cero" primero. Eso es exactamente lo que hace que la propiedad sea más fácil de depurar que un log con datos aleatorios: el reporte ya viene apuntando al borde del dominio, que es donde suelen vivir los defectos.
+```text
+Original Sample
+---------------
+  arg0: -1647   (id)
+  arg1: 25      (edad)
+  arg2: FEMALE  (género)
 
-## Cuándo NO se usó property-based (y por qué eso está bien)
+  Original Error
+  --------------
+  org.opentest4j.AssertionFailedError:
+    expected: <INVALID> but was: <VALID>
 
-R1 (persona nula) no tiene una propiedad jqwik dedicada: `@ForAll Person` generaría instancias de `Person` construidas con datos aleatorios, pero jqwik no puede generar de forma natural "un `Person` que sea `null`" como parte de ese mismo `@ForAll` sin un proveedor artificial que le reste valor a la prueba. Aquí el ejemplo concreto (`shouldReturnInvalidWhenPersonIsNull`) documenta mejor el caso que cualquier propiedad forzada — es exactamente la situación que describe el README: "un caso de negocio importante merece ambas, pero no todo caso necesita una propiedad".
+Shrunk Sample (3 steps)
+-----------------------
+  arg0: 0
+  arg1: 18
+  arg2: MALE
+```
+
+jqwik primero encontró la falla con una entrada bastante random (id -1647), y en solo 3 pasos la redujo hasta el caso más simple que sigue rompiendo la propiedad: id = 0. Si tuviera que revisar a mano por qué falló "id -1647, edad 25, género FEMALE", no sabría de una si el problema es el id, la edad o el género. Con "id 0, edad 18, género MALE" es inmediato: el id es el único valor en el borde de su rango, así que ahí está el problema. Eso es justo lo que hace útil el shrinking frente a un log de datos aleatorios: apunta directo al borde del dominio, que es donde suelen estar los errores.
+
+Después de capturar esto deshice el cambio (volví a descomentar la validación de R2) y corrí `mvn clean verify` de nuevo para confirmar que las 22 pruebas vuelven a pasar todas.

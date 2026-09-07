@@ -1,11 +1,5 @@
 package edu.unisabana.tyvs.domain.model;
 
-/**
- * Resultado posible de un intento de registro de votante.
- *
- * Cada constante corresponde a una clase de equivalencia del dominio:
- * ver la matriz de clases de equivalencia y valores límite en el README.
- */
 public enum RegisterResult {
     /** Persona viva, mayor de edad, id válido y no registrada previamente. */
     VALID,
